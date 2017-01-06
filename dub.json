@@ -1,0 +1,15 @@
+{
+	"authors": [
+		"Morton Fox"
+	],
+	"name": "twstat-web-d",
+	"license": "gpl3",
+	"copyright": "Copyright © 2017, Morton Fox",
+	"description": "Web interface to Twitter archive stats generator",
+	"dependencies": {
+		"vibe-d": "~>0.7.28"
+	},
+	"versions": [
+		"VibeDefaultMain"
+	]
+}

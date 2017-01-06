@@ -1,0 +1,9 @@
+extends layout.dt
+
+block title
+  | Dashboard
+
+block content
+  p
+
+//- vim:set et sw=2:
