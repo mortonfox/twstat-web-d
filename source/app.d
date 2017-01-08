@@ -4,6 +4,7 @@ shared static this()
 {
     auto router = new URLRouter;
     router.get("/", staticTemplate!"dashboard.dt");
+    router.get("*", serveStaticFiles("public/"));
 
     auto settings = new HTTPServerSettings;
     settings.port = 8080;

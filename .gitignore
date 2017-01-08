@@ -5,3 +5,5 @@ __dummy.html
 *.obj
 __test__*__
 .*.sw?
+dub.selections.json
+twstat-web-d
