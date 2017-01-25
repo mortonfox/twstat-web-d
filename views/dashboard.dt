@@ -6,6 +6,9 @@ block title
 block content
   form.form-inline(method='post', action='/upload', enctype='multipart/form-data')
     fieldset
+      - if (errormsg != "")
+        p.error= errormsg
+
       label(for='tweetdata') Upload tweets.zip file:
       | &nbsp;
 
