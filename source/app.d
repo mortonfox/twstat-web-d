@@ -29,7 +29,18 @@ void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
 
 void upload(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
-    req.session.set("tz", req.form.get("timezone"));
+
+    auto new_tz = req.form.get("timezone");
+
+    try {
+        // Error checking for user input. Don't change the session tz if
+        // timezone string is invalid.
+        PosixTimeZone.getTimeZone(new_tz);
+
+        req.session.set("tz", new_tz);
+    }
+    catch (Exception e) {
+    }
 
     res.redirect("/");
 }
