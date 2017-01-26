@@ -4,35 +4,36 @@ block title
   | Dashboard
 
 block content
-  form.form-inline(method='post', action='/upload', enctype='multipart/form-data')
+  form(method='post', action='/upload', enctype='multipart/form-data')
     fieldset
       - if (errormsg != "")
-        p.error= errormsg
+        div(class='form-group bg-danger')= errormsg
 
-      label(for='tweetdata') Upload tweets.zip file:
-      | &nbsp;
-
-      div(class='fileinput fileinput-new', data-provides='fileinput')
-        span(class='btn btn-default btn-file')
-          span.fileinput-new Select file
-          span.fileinput-exists Change file
-          input#tweetdata(name='tweetdata', type='file', required)
+      .form-group
+        label(for='tweetdata') Upload tweets.zip file:
         | &nbsp;
-        span.fileinput-preview
+
+        div(class='fileinput fileinput-new', data-provides='fileinput')
+          span(class='btn btn-default btn-file')
+            span.fileinput-new Select file
+            span.fileinput-exists Change file
+            input#tweetdata(name='tweetdata', type='file', required)
+          | &nbsp;
+          span.fileinput-preview
+          | &nbsp;
+          a(href='#', class='close fileinput-exists', data-dismiss='fileinput', style='float: none') x
+
+      .form-group
+        label(for='timezone') Select a time zone:
         | &nbsp;
-        a(href='#', class='close fileinput-exists', data-dismiss='fileinput', style='float: none') x
+        select#timezone(name='timezone')
+          - foreach (tzname; tznames)
+            - if (tzname == selected_tz)
+              option(value="#{tzname}", selected='selected')= tzname
+            - else
+              option(value="#{tzname}")= tzname
 
-      br
-      | Select a time zone:&nbsp;
-      select#timezone(name='timezone')
-        - foreach (tzname; tznames)
-          - if (tzname == selected_tz)
-            option(value="#{tzname}", selected='selected')= tzname
-          - else
-            option(value="#{tzname}")= tzname
-
-      br
-
-      button(type='submit', class='btn btn-primary') Upload
+      .form-group
+        button(type='submit', class='btn btn-primary') Upload
 
 //- vim:set et sw=2:
