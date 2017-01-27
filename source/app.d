@@ -22,7 +22,13 @@ shared static this()
 }
 
 struct DashParams {
+    string status;
+    bool cancel;
+    string message;
     string errormsg;
+
+    bool refresh;
+
     string[] tznames;
     string selected_tz;
 }
@@ -38,6 +44,9 @@ void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
 
     DashParams dashparams;
+
+    dashparams.status = "busy";
+    dashparams.message = "Hello!";
 
     render_dash(req.session, dashparams, res);
 }
