@@ -21,15 +21,25 @@ shared static this()
     logInfo("Please open http://127.0.0.1:8080/ in your browser.");
 }
 
-void render_dash(Session sess, string errormsg, HTTPServerResponse res) {
-    auto tznames = PosixTimeZone.getInstalledTZNames();
-    auto selected_tz = sess.get("tz", "US/Eastern");
-    render!("dashboard.dt", tznames, selected_tz, errormsg)(res);
+struct DashParams {
+    string errormsg;
+    string[] tznames;
+    string selected_tz;
+}
+
+void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
+    dashparams.tznames = PosixTimeZone.getInstalledTZNames();
+    dashparams.selected_tz = sess.get("tz", "US/Eastern");
+
+    render!("dashboard.dt", dashparams)(res);
 }
 
 void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
-    render_dash(req.session, "", res);
+
+    DashParams dashparams;
+
+    render_dash(req.session, dashparams, res);
 }
 
 void upload(HTTPServerRequest req, HTTPServerResponse res) {
@@ -52,6 +62,9 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
 
 void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
     if (!req.session) req.session = res.startSession();
-    auto errormsg = text("Error ", error.code, ": ", error.message);
-    render_dash(req.session, errormsg, res);
+
+    DashParams dashparams;
+    dashparams.errormsg = text("Error ", error.code, ": ", error.message);
+
+    render_dash(req.session, dashparams, res);
 }

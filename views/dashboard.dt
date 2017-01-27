@@ -6,8 +6,8 @@ block title
 block content
   form(method='post', action='/upload', enctype='multipart/form-data')
     fieldset
-      - if (errormsg != "")
-        div(class='form-group bg-danger')= errormsg
+      - if (dashparams.errormsg != "")
+        div(class='form-group bg-danger')= dashparams.errormsg
 
       .form-group
         label(for='tweetdata') Upload tweets.zip file:
@@ -27,8 +27,8 @@ block content
         label(for='timezone') Select a time zone:
         | &nbsp;
         select#timezone(name='timezone')
-          - foreach (tzname; tznames)
-            - if (tzname == selected_tz)
+          - foreach (tzname; dashparams.tznames)
+            - if (tzname == dashparams.selected_tz)
               option(value="#{tzname}", selected='selected')= tzname
             - else
               option(value="#{tzname}")= tzname
