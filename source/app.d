@@ -2,7 +2,7 @@ import vibe.d;
 import std.conv : text;
 import std.csv : csvReader;
 import std.datetime : PosixTimeZone;
-import std.file : read;
+import std.file : read, tempDir;
 import std.zip : ZipArchive;
 import tweetstats : TweetStats, TweetRecord;
 
@@ -150,6 +150,8 @@ bool process_zipfile(string sessid, Path infile) {
 
         task_states.set_status(sessid, "ready");
         /* sess.set("status", "ready"); */
+
+        removeFile(infile);
     }
     catch (Exception e) {
         task_states.set_status(sessid, "error");
@@ -176,8 +178,25 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
     catch (Exception e) {
     }
 
-    task_states.set_status(req.session.id, "waiting");
-    runWorkerTask(&process_zipfile, req.session.id, req.files["tweetdata"].tempPath);
+    auto sessid = req.session.id;
+
+    task_states.set_status(sessid, "waiting");
+
+    // Make a copy of the tempfile in case it gets deleted before the worker
+    // task has had a chance to read it.
+    auto upload_file = req.files["tweetdata"];
+    auto new_fname = Path(tempDir()) ~ ("dup_" ~ upload_file.tempPath.head.toString);
+
+    try {
+        moveFile(upload_file.tempPath, new_fname);
+    }
+    catch (Exception e) {
+        copyFile(upload_file.tempPath, new_fname);
+    }
+
+    logDebug("copied upload file: %s", new_fname);
+
+    runWorkerTask(&process_zipfile, sessid, new_fname);
 
     res.redirect("/");
 } // upload

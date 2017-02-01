@@ -107,7 +107,7 @@ class TweetStats {
         return cast(DateTime) tsystime.toLocalTime;
     }
 
-    private const progress_interval = 5_000;
+    private const progress_interval = 1_000;
 
     void process_record(in TweetRecord record, void delegate(string) busy_message) {
         auto tstamp = parse_tstamp(record.timestamp);
