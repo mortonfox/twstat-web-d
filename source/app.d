@@ -12,6 +12,7 @@ shared static this()
     router.get("/", &dashboard);
     router.get("/upload", &dashboard);
     router.post("/upload", &upload);
+    router.post("/cancel", &cancel);
     router.get("*", serveStaticFiles("public/"));
 
     auto settings = new HTTPServerSettings;
@@ -52,7 +53,7 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
 
     dashparams.refresh = dashparams.status == "waiting" || dashparams.status == "busy";
 
-    dashparams.cancel = sess.get("cancel", false) == true;
+    dashparams.cancel = task_states.get_cancel(sessid);
 
     if (dashparams.status == "error") {
         // Background task completed with error. Show error message and reset status.
@@ -73,10 +74,12 @@ void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
 struct TaskState {
     string status;
     string message;
+    bool cancel;
 
     this(string status, string message = "") {
         this.status = status;
         this.message = message;
+        this.cancel = false;
     }
 }
 
@@ -102,6 +105,16 @@ synchronized class TaskStates {
         ensure_state(sessid);
         states[sessid].status = status;
         states[sessid].message = message;
+    }
+
+    bool get_cancel(string sessid) {
+        ensure_state(sessid);
+        return states[sessid].cancel;
+    }
+
+    void set_cancel(string sessid, bool cancel) {
+        ensure_state(sessid);
+        states[sessid].cancel = cancel;
     }
 }
 
@@ -136,8 +149,16 @@ bool process_zipfile(string sessid, Path infile) {
 
         logInfo("Processing CSV tweet records...");
 
-        foreach (record; records)
+        foreach (record; records) {
             tweetstats.process_record(record, &busy_message);
+
+            // Detect user cancel.
+            if (task_states.get_cancel(sessid)) {
+                logInfo("Task canceled!");
+                task_states.set_cancel(sessid, false);
+                break;
+            }
+        }
 
         task_states.set_status(sessid, "ready");
 
@@ -187,6 +208,20 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
 
     res.redirect("/");
 } // upload
+
+void cancel(HTTPServerRequest req, HTTPServerResponse res) {
+    if (!req.session) req.session = res.startSession();
+
+    auto sessid = req.session.id;
+
+    auto status = task_states.get_status(sessid);
+
+    // Can only cancel if task is running.
+    if (status == "waiting" || status == "busy")
+        task_states.set_cancel(sessid, true);
+
+    res.redirect("/");
+} // cancel
 
 void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
     if (!req.session) req.session = res.startSession();
