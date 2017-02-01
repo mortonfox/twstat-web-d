@@ -22,6 +22,8 @@ shared static this()
     settings.errorPageHandler = toDelegate(&errorHandler);
     listenHTTP(settings, router);
 
+    setLogLevel(LogLevel.debug_);
+
     logInfo("Please open http://127.0.0.1:8080/ in your browser.");
 }
 
@@ -44,6 +46,8 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     dashparams.status = sess.get("status", "ready");
     dashparams.message = sess.get("message", "");
 
+    logDebug("Dashboard status: %s, message: %s", dashparams.status, dashparams.message);
+
     dashparams.refresh = dashparams.status == "waiting" || dashparams.status == "busy";
 
     dashparams.cancel = sess.get("cancel", false) == true;
@@ -55,7 +59,7 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     }
 
     render!("dashboard.dt", dashparams)(res);
-}
+} // render_dash
 
 void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
@@ -65,23 +69,37 @@ void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
 }
 
 bool process_zipfile(Session sess, Path infile) {
+
+    void busy_message(string message) {
+        sess.set("status", "busy");
+        sess.set("message", message);
+
+        logDebug("Busy message: %s", message);
+    }
+
     // CSV file for tweets within the ZIP file.
     const tweets_file = "tweets.csv";
 
     auto tweetstats = new TweetStats;
 
     try {
+        logInfo("zipfile processor starting...");
+
         auto zip = new ZipArchive(readFile(infile));
         auto zipdir = zip.directory;
 
         if (tweets_file !in zipdir)
             throw new Exception(text(tweets_file, " was not found in ZIP file ", infile));
 
+        logInfo("Extracting %s...", tweets_file);
+
         auto text = cast(char[]) zip.expand(zipdir[tweets_file]);
         auto records = csvReader!TweetRecord(text, ["timestamp", "source", "text"]);
 
+        logInfo("Processing CSV tweet records...");
+
         foreach (record; records)
-            tweetstats.process_record(record);
+            tweetstats.process_record(record, &busy_message);
 
         sess.set("status", "ready");
     }
@@ -91,7 +109,7 @@ bool process_zipfile(Session sess, Path infile) {
     }
 
     return true;
-}
+} // process_zipfile
 
 void upload(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
@@ -113,7 +131,7 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
     async(&process_zipfile, req.session, req.files["tweetdata"].tempPath);
 
     res.redirect("/");
-}
+} // upload
 
 void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
     if (!req.session) req.session = res.startSession();

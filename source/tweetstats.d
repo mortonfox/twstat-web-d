@@ -6,7 +6,7 @@ import std.datetime : DateTime, SysTime, days, Date, UTC;
 import std.format : formattedRead, format;
 import std.range : repeat, take, enumerate;
 import std.regex : matchAll, replaceAll, split, ctRegex;
-import std.stdio : File, writef, stdout;
+import std.stdio : File /* , writef, stdout */;
 import std.string : tr, toLower;
 import std.typecons : Tuple;
 // import mustache : MustacheEngine;
@@ -109,7 +109,7 @@ class TweetStats {
 
     private const progress_interval = 5_000;
 
-    void process_record(in TweetRecord record) {
+    void process_record(in TweetRecord record, void delegate(string) busy_message) {
         auto tstamp = parse_tstamp(record.timestamp);
 
         // Save the newest timestamp since the last N days stat refers to the N
@@ -128,8 +128,9 @@ class TweetStats {
         row_count ++;
 
         if (row_count % progress_interval == 0) {
-            writef("\rProcessing row %d (%s) ...", row_count, format_date(tstamp));
-            stdout.flush;
+            // writef("\rProcessing row %d (%s) ...", row_count, format_date(tstamp));
+            // stdout.flush;
+            busy_message(text("Processing row ", row_count, " (", format_date(tstamp), ")"));
         }
 
         auto month_text = format("%04d-%02d", tstamp.year, tstamp.month);
