@@ -47,8 +47,6 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
 
     dashparams.status = task_states.get_status(sessid);
     dashparams.message = task_states.get_message(sessid);
-    /* dashparams.status = sess.get("status", "ready"); */
-    /* dashparams.message = sess.get("message", ""); */
 
     logDebug("Dashboard status: %s, message: %s", dashparams.status, dashparams.message);
 
@@ -118,8 +116,6 @@ bool process_zipfile(string sessid, Path infile) {
     void busy_message(string message) {
         task_states.set_status(sessid, "busy");
         task_states.set_message(sessid, message);
-        /* sess.set("status", "busy"); */
-        /* sess.set("message", message); */
 
         logDebug("Busy message: %s", message);
     }
@@ -149,15 +145,12 @@ bool process_zipfile(string sessid, Path infile) {
             tweetstats.process_record(record, &busy_message);
 
         task_states.set_status(sessid, "ready");
-        /* sess.set("status", "ready"); */
 
         removeFile(infile);
     }
     catch (Exception e) {
         task_states.set_status(sessid, "error");
         task_states.set_message(sessid, text("Error processing ZIP file: ", e.msg));
-        /* sess.set("status", "error"); */
-        /* sess.set("message", text("Error processing ZIP file: ", e.msg)); */
     }
 
     return true;
