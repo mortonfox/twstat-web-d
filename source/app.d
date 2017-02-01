@@ -43,8 +43,12 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     dashparams.tznames = PosixTimeZone.getInstalledTZNames();
     dashparams.selected_tz = sess.get("tz", "US/Eastern");
 
-    dashparams.status = sess.get("status", "ready");
-    dashparams.message = sess.get("message", "");
+    auto sessid = sess.id;
+
+    dashparams.status = task_states.get_status(sessid);
+    dashparams.message = task_states.get_message(sessid);
+    /* dashparams.status = sess.get("status", "ready"); */
+    /* dashparams.message = sess.get("message", ""); */
 
     logDebug("Dashboard status: %s, message: %s", dashparams.status, dashparams.message);
 
@@ -54,8 +58,8 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
 
     if (dashparams.status == "error") {
         // Background task completed with error. Show error message and reset status.
-        dashparams.errormsg = sess.get("message", "");
-        sess.set("status", "ready");
+        dashparams.errormsg = dashparams.message;
+        task_states.set_status(sessid, "ready");
     }
 
     render!("dashboard.dt", dashparams)(res);
@@ -68,11 +72,54 @@ void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
     render_dash(req.session, dashparams, res);
 }
 
-bool process_zipfile(Session sess, Path infile) {
+struct TaskState {
+    string status;
+    string message;
+
+    this(string status, string message = "") {
+        this.status = status;
+        this.message = message;
+    }
+}
+
+synchronized class TaskStates {
+    private TaskState[string] states;
+
+    private void ensure_state(string sessid) {
+        if (sessid !in states)
+            states[sessid] = TaskState("ready");
+    }
+
+    string get_status(string sessid) {
+        ensure_state(sessid);
+        return states[sessid].status;
+    }
+
+    string get_message(string sessid) {
+        ensure_state(sessid);
+        return states[sessid].message;
+    }
+
+    void set_status(string sessid, string status) {
+        ensure_state(sessid);
+        states[sessid].status = status;
+    }
+
+    void set_message(string sessid, string message) {
+        ensure_state(sessid);
+        states[sessid].message = message;
+    }
+}
+
+shared task_states = new TaskStates();
+
+bool process_zipfile(string sessid, Path infile) {
 
     void busy_message(string message) {
-        sess.set("status", "busy");
-        sess.set("message", message);
+        task_states.set_status(sessid, "busy");
+        task_states.set_message(sessid, message);
+        /* sess.set("status", "busy"); */
+        /* sess.set("message", message); */
 
         logDebug("Busy message: %s", message);
     }
@@ -101,11 +148,14 @@ bool process_zipfile(Session sess, Path infile) {
         foreach (record; records)
             tweetstats.process_record(record, &busy_message);
 
-        sess.set("status", "ready");
+        task_states.set_status(sessid, "ready");
+        /* sess.set("status", "ready"); */
     }
     catch (Exception e) {
-        sess.set("status", "error");
-        sess.set("message", text("Error processing ZIP file: ", e.msg));
+        task_states.set_status(sessid, "error");
+        task_states.set_message(sessid, text("Error processing ZIP file: ", e.msg));
+        /* sess.set("status", "error"); */
+        /* sess.set("message", text("Error processing ZIP file: ", e.msg)); */
     }
 
     return true;
@@ -126,9 +176,8 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
     catch (Exception e) {
     }
 
-    req.session.set("status", "waiting");
-
-    async(&process_zipfile, req.session, req.files["tweetdata"].tempPath);
+    task_states.set_status(req.session.id, "waiting");
+    runWorkerTask(&process_zipfile, req.session.id, req.files["tweetdata"].tempPath);
 
     res.redirect("/");
 } // upload
