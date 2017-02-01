@@ -98,13 +98,9 @@ synchronized class TaskStates {
         return states[sessid].message;
     }
 
-    void set_status(string sessid, string status) {
+    void set_status(string sessid, string status, string message = "") {
         ensure_state(sessid);
         states[sessid].status = status;
-    }
-
-    void set_message(string sessid, string message) {
-        ensure_state(sessid);
         states[sessid].message = message;
     }
 }
@@ -114,8 +110,7 @@ shared task_states = new TaskStates();
 bool process_zipfile(string sessid, Path infile) {
 
     void busy_message(string message) {
-        task_states.set_status(sessid, "busy");
-        task_states.set_message(sessid, message);
+        task_states.set_status(sessid, "busy", message);
 
         logDebug("Busy message: %s", message);
     }
@@ -149,8 +144,7 @@ bool process_zipfile(string sessid, Path infile) {
         removeFile(infile);
     }
     catch (Exception e) {
-        task_states.set_status(sessid, "error");
-        task_states.set_message(sessid, text("Error processing ZIP file: ", e.msg));
+        task_states.set_status(sessid, "error", text("Error processing ZIP file: ", e.msg));
     }
 
     return true;
