@@ -86,37 +86,36 @@ struct TaskState {
 synchronized class TaskStates {
     private TaskState[string] states;
 
-    private void ensure_state(string sessid) {
+    // Retrieve TaskState corresponding to session ID. Initialize a TaskState
+    // and return it if it doesn't exist.
+    private shared(TaskState)* get_state(string sessid) {
         if (sessid !in states)
             states[sessid] = TaskState("ready");
+        return &states[sessid];
     }
 
     string get_status(string sessid) {
-        ensure_state(sessid);
-        return states[sessid].status;
+        return get_state(sessid).status;
     }
 
     string get_message(string sessid) {
-        ensure_state(sessid);
-        return states[sessid].message;
+        return get_state(sessid).message;
     }
 
     void set_status(string sessid, string status, string message = "") {
-        ensure_state(sessid);
-        states[sessid].status = status;
-        states[sessid].message = message;
+        auto task_state = get_state(sessid);
+        task_state.status = status;
+        task_state.message = message;
     }
 
     bool get_cancel(string sessid) {
-        ensure_state(sessid);
-        return states[sessid].cancel;
+        return get_state(sessid).cancel;
     }
 
     void set_cancel(string sessid, bool cancel) {
-        ensure_state(sessid);
-        states[sessid].cancel = cancel;
+        get_state(sessid).cancel = cancel;
     }
-}
+} // TaskStates
 
 shared task_states = new TaskStates();
 
@@ -201,12 +200,10 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
     auto upload_file = req.files["tweetdata"];
     auto new_fname = Path(tempDir()) ~ ("dup_" ~ upload_file.tempPath.head.toString);
 
-    try {
+    try
         moveFile(upload_file.tempPath, new_fname);
-    }
-    catch (Exception e) {
+    catch (Exception e)
         copyFile(upload_file.tempPath, new_fname);
-    }
 
     logDebug("copied upload file: %s", new_fname);
 
