@@ -55,6 +55,11 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
 
     dashparams.cancel = task_states.get_cancel(sessid);
 
+    auto report_vars = task_states.get_report_vars(sessid);
+    logDebug("Report Vars:");
+    foreach (pair; report_vars.byKeyValue)
+        logDebug("  %s: %s", pair.key, pair.value);
+
     if (dashparams.status == "error") {
         // Background task completed with error. Show error message and reset status.
         dashparams.errormsg = dashparams.message;
@@ -71,10 +76,11 @@ void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
     render_dash(req.session, dashparams, res);
 }
 
-struct TaskState {
+shared struct TaskState {
     string status;
     string message;
     bool cancel;
+    string[string] report_vars;
 
     this(string status, string message = "") {
         this.status = status;
@@ -84,13 +90,14 @@ struct TaskState {
 }
 
 synchronized class TaskStates {
+    // Task states indexed by session ID.
     private TaskState[string] states;
 
     // Retrieve TaskState corresponding to session ID. Initialize a TaskState
     // and return it if it doesn't exist.
     private auto get_state(string sessid) {
         if (sessid !in states)
-            states[sessid] = TaskState("ready");
+            states[sessid] = shared(TaskState)("ready");
         return &states[sessid];
     }
 
@@ -114,6 +121,20 @@ synchronized class TaskStates {
 
     void set_cancel(string sessid, bool cancel) {
         get_state(sessid).cancel = cancel;
+    }
+
+    auto get_report_vars(string sessid) {
+        return get_state(sessid).report_vars;
+    }
+
+    void set_report_vars(string sessid, string[string] report) {
+        auto task_state = get_state(sessid);
+        task_state.report_vars.clear;
+
+        // Copy it string by string because the incoming report is not a
+        // shared variable.
+        foreach (pair; report.byKeyValue)
+            task_state.report_vars[pair.key] = pair.value;
     }
 } // TaskStates
 
@@ -161,6 +182,15 @@ bool process_zipfile(string sessid, Path infile) {
                 break;
             }
         }
+
+        auto report_vars = tweetstats.report_vars;
+        task_states.set_report_vars(sessid, report_vars);
+
+        /*
+        logDebug("Resulting Report Vars:");
+        foreach (pair; report_vars.byKeyValue)
+            logDebug("  %s: %s", pair.key, pair.value);
+            */
 
         task_states.set_status(sessid, "ready");
 

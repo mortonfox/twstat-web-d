@@ -6,10 +6,8 @@ import std.datetime : DateTime, SysTime, days, Date, UTC;
 import std.format : formattedRead, format;
 import std.range : repeat, take, enumerate;
 import std.regex : matchAll, replaceAll, split, ctRegex;
-import std.stdio : File /* , writef, stdout */;
 import std.string : tr, toLower;
 import std.typecons : Tuple;
-// import mustache : MustacheEngine;
 
 alias TweetRecord = Tuple!(string, "timestamp", string, "source", string, "text");
 
@@ -165,74 +163,17 @@ class TweetStats {
         }
     } // process_record
 
-    void report_text(ref File f) {
-        void report_title(string title) {
-            f.writeln;
-            f.writeln(title);
-            f.writeln(repeat('=', title.length));
-        }
-
-        report_title("Tweets by Month");
-        foreach (month_str; sort(count_by_month.keys))
-            f.writeln(month_str, ": ", count_by_month[month_str]);
-
-        foreach (period; count_defs) {
-            report_title(text("Tweets by Day of Week (", period.title, ")"));
-            foreach (j, count; period.count_by_dow)
-                f.writeln(downames[j], ": ", count);
-        }
-
-        foreach (period; count_defs) {
-            report_title(text("Tweets by Hour (", period.title, ")"));
-            foreach (j, count; period.count_by_hour)
-                f.writeln(j, ": ", count);
-        }
-
-        foreach (period; count_defs) {
-            report_title(text("Top Mentions (", period.title, ")"));
-            foreach (mention;
-                    period.count_by_mentions.byKeyValue
-                    .array
-                    .sort!((a, b) => a.value > b.value)
-                    .take(10))
-                f.writeln(mention.key, ": ", mention.value);
-        }
-
-        foreach (period; count_defs) {
-            report_title(text("Top Clients (", period.title, ")"));
-            foreach (source;
-                    period.count_by_source.byKeyValue
-                    .array
-                    .sort!((a, b) => a.value > b.value)
-                    .take(10))
-                f.writeln(source.key, ": ", source.value);
-        }
-
-        foreach (period; count_defs) {
-            report_title(text("Top Words (", period.title, ")"));
-            foreach (word;
-                    period.count_by_words.byKeyValue
-                    .array
-                    .sort!((a, b) => a.value > b.value)
-                    .take(20))
-                f.writeln(word.key, ": ", word.value);
-        }
-    } // report_text
-
     private auto make_tooltip(string category, int count) {
         return format("<div class=\"tooltip\"><strong>%s</strong><br />%d tweets</div>", category, count);
     }
 
-    /*
-    void report_html(ref File f) {
+    auto report_vars() {
         static colors = [
             "#673AB7", "#3F51B5", "#2196F3", "#009688",
             "#4CAF50", "#FF5722", "#E91E63"
         ];
 
-        alias MustacheEngine!(string) Mustache;
-        Mustache mustache;
-        auto context = new Mustache.Context;
+        string[string] report;
 
         auto months = sort(count_by_month.keys);
 
@@ -253,7 +194,7 @@ class TweetStats {
         {
             auto by_month_data = months.enumerate
                 .map!(month_pair => process_month(month_pair.value, month_pair.index));
-            context["by_month_data"] = by_month_data.join(",\n");
+            report["by_month_data"] = by_month_data.join(",\n");
         }
 
         int first_month_year, first_month_month, last_month_year, last_month_month;
@@ -262,10 +203,10 @@ class TweetStats {
         parse_month_str(months[$ - 1], last_month_year, last_month_month);
         auto last_month = Date(last_month_year, last_month_month, 15);
 
-        context["by_month_min"] = format("%d, %d, %d", first_month.year, first_month.month - 1, first_month.day);
-        context["by_month_max"] = format("%d, %d, %d", last_month.year, last_month.month - 1, last_month.day);
+        report["by_month_min"] = format("%d, %d, %d", first_month.year, first_month.month - 1, first_month.day);
+        report["by_month_max"] = format("%d, %d, %d", last_month.year, last_month.month - 1, last_month.day);
 
-        context["subtitle"] = text("from ",
+        report["subtitle"] = text("from ",
                 format_date(oldest_tstamp),
                 " to ",
                 format_date(newest_tstamp));
@@ -281,7 +222,7 @@ class TweetStats {
         foreach (period; count_defs) {
             auto by_dow_data = period.count_by_dow[].enumerate
                 .map!(dow_pair => process_dow(dow_pair.value, dow_pair.index));
-            context["by_dow_data_" ~ period.keyword] = by_dow_data.join(",\n");
+            report["by_dow_data_" ~ period.keyword] = by_dow_data.join(",\n");
         }
 
         auto process_hour(int count, size_t i) {
@@ -294,7 +235,7 @@ class TweetStats {
         foreach (period; count_defs) {
             auto by_hour_data = period.count_by_hour[].enumerate
                 .map!(hour_pair => process_hour(hour_pair.value, hour_pair.index));
-            context["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
+            report["by_hour_data_" ~ period.keyword] = by_hour_data.join(",\n");
         }
 
         auto process_mention(string user, int count, size_t i) {
@@ -308,7 +249,7 @@ class TweetStats {
                 .take(10);
             auto by_mention_data = top_mentions.enumerate
                 .map!(mention_pair => process_mention(mention_pair.value.key, mention_pair.value.value, mention_pair.index));
-            context["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
+            report["by_mention_data_" ~ period.keyword] = by_mention_data.join(",\n");
         }
 
         auto process_source(string source, int count, size_t i) {
@@ -322,7 +263,7 @@ class TweetStats {
                 .take(10);
             auto by_source_data = top_sources.enumerate
                 .map!(source_pair => process_source(source_pair.value.key, source_pair.value.value, source_pair.index));
-            context["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
+            report["by_source_data_" ~ period.keyword] = by_source_data.join(",\n");
         }
 
         auto process_words(string word, int count) {
@@ -335,14 +276,12 @@ class TweetStats {
                 .sort!((a, b) => a.value > b.value)
                 .take(100);
             auto by_words_data = map!(word => process_words(word.key, word.value))(top_words);
-            context["by_words_data_" ~ period.keyword] = by_words_data.join(",\n");
+            report["by_words_data_" ~ period.keyword] = by_words_data.join(",\n");
         }
 
         foreach (period; count_defs)
-            context["title_" ~ period.keyword] = period.title;
+            report["title_" ~ period.keyword] = period.title;
 
-        auto templ = import("twstat.mustache");
-        f.rawWrite(mustache.renderString(templ, context));
-    } // report_html
-    */
+        return report;
+    } // report_vars
 } // class TweetStats
