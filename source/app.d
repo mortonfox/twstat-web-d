@@ -88,7 +88,7 @@ synchronized class TaskStates {
 
     // Retrieve TaskState corresponding to session ID. Initialize a TaskState
     // and return it if it doesn't exist.
-    private shared(TaskState)* get_state(string sessid) {
+    private auto get_state(string sessid) {
         if (sessid !in states)
             states[sessid] = TaskState("ready");
         return &states[sessid];
