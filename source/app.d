@@ -134,6 +134,9 @@ bool process_zipfile(string sessid, Path infile) {
     auto tweetstats = new TweetStats;
 
     try {
+        // Reset cancel flag, just in case.
+        task_states.set_cancel(sessid, false);
+
         logInfo("zipfile processor starting...");
 
         auto zip = new ZipArchive(readFile(infile));
@@ -163,6 +166,9 @@ bool process_zipfile(string sessid, Path infile) {
         task_states.set_status(sessid, "ready");
 
         removeFile(infile);
+
+        // Reset cancel flag, just in case.
+        task_states.set_cancel(sessid, false);
     }
     catch (Exception e) {
         task_states.set_status(sessid, "error", text("Error processing ZIP file: ", e.msg));
