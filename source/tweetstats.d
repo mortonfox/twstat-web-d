@@ -2,7 +2,7 @@ import std.algorithm.iteration : map, filter;
 import std.algorithm.sorting : sort;
 import std.array : array, join;
 import std.conv : text;
-import std.datetime : DateTime, SysTime, days, Date, UTC;
+import std.datetime : DateTime, SysTime, days, Date, UTC, PosixTimeZone, Clock;
 import std.format : formattedRead, format;
 import std.range : take, enumerate, iota;
 import std.regex : matchAll, replaceAll, split, ctRegex;
@@ -49,6 +49,8 @@ class TweetStats {
     private DateTime newest_tstamp;
     private int row_count;
 
+    private immutable PosixTimeZone tz;
+
     private static mention_regex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
     private static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
     private static word_split_regex = ctRegex!(`[^a-z0-9_']+`);
@@ -77,18 +79,20 @@ class TweetStats {
         ];
 
         auto zero_time_cutoff_systime = new SysTime(DateTime(2010, 11, 4, 21), UTC());
-        zero_time_cutoff = cast(DateTime) zero_time_cutoff_systime.toLocalTime;
+        zero_time_cutoff = cast(DateTime) *zero_time_cutoff_systime;
     }
 
     private static downames = [
         "Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"
     ];
 
-    this() {
+    this(string tzname) {
         count_defs = [
             PeriodInfo("all time", "alltime", 0),
             PeriodInfo("last 30 days", "last30", 30)
         ];
+
+        tz = PosixTimeZone.getTimeZone(tzname);
     }
 
     private auto format_date(in DateTime tstamp) {
@@ -102,7 +106,7 @@ class TweetStats {
             throw new Exception(text("Unrecognized timestamp format: ", timestamp));
 
         auto tsystime = new SysTime(DateTime(year, mon, day, hour, min, sec), UTC());
-        return cast(DateTime) tsystime.toLocalTime;
+        return cast(DateTime) tsystime.toOtherTZ(tz);
     }
 
     private const progress_interval = 1_000;
@@ -285,6 +289,8 @@ class TweetStats {
         report["extra_css"] = iota(0, 10)
             .map!(i => format(".w%d { color: %s !important; }", 10 - i, colors[i % $]))
             .join("\n");
+
+        report["last_generated"] = Clock.currTime.toOtherTZ(tz).toString;
 
         return report;
     } // report_vars

@@ -40,9 +40,11 @@ struct DashParams {
     string selected_tz;
 }
 
+const default_timezone = "US/Eastern";
+
 void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     dashparams.tznames = PosixTimeZone.getInstalledTZNames();
-    dashparams.selected_tz = sess.get("tz", "US/Eastern");
+    dashparams.selected_tz = sess.get("tz", default_timezone);
 
     auto sessid = sess.id;
 
@@ -140,7 +142,7 @@ synchronized class TaskStates {
 
 shared task_states = new TaskStates();
 
-bool process_zipfile(string sessid, Path infile) {
+bool process_zipfile(string sessid, Path infile, string tz) {
 
     void busy_message(string message) {
         task_states.set_status(sessid, "busy", message);
@@ -165,7 +167,7 @@ bool process_zipfile(string sessid, Path infile) {
         removeFile(infile);
     }
 
-    auto tweetstats = new TweetStats;
+    auto tweetstats = new TweetStats(tz);
 
     try {
         logInfo("zipfile processor starting...");
@@ -234,7 +236,7 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
 
     logDebug("copied upload file: %s", new_fname);
 
-    runWorkerTask(&process_zipfile, sessid, new_fname);
+    runWorkerTask(&process_zipfile, sessid, new_fname, req.session.get("tz", default_timezone));
 
     res.redirect("/");
 } // upload
