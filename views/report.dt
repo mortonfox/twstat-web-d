@@ -181,8 +181,8 @@ html
 
           draw_by_month(
                   [ !{report["by_month_data"]} ], 
-                  new Date(#{report["by_month_min"]), 
-                  new Date(#{report["by_month_max"])
+                  new Date(#{report["by_month_min"]}), 
+                  new Date(#{report["by_month_max"]})
           );
 
           draw_by_dow(

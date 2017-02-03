@@ -11,6 +11,7 @@ shared static this()
     auto router = new URLRouter;
     router.get("/", &dashboard);
     router.get("/upload", &dashboard);
+    router.get("/report", &report);
     router.post("/upload", &upload);
     router.post("/cancel", &cancel);
     router.get("*", serveStaticFiles("public/"));
@@ -33,6 +34,7 @@ struct DashParams {
     bool cancel;
     string message;
     string errormsg;
+    string last_generated;
 
     bool refresh;
 
@@ -61,6 +63,9 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     logDebug("Report Vars:");
     foreach (pair; report_vars.byKeyValue)
         logDebug("  %s: %s", pair.key, pair.value);
+
+    if (report_vars)
+        dashparams.last_generated = report_vars["last_generated"];
 
     if (dashparams.status == "error") {
         // Background task completed with error. Show error message and reset status.
@@ -254,6 +259,13 @@ void cancel(HTTPServerRequest req, HTTPServerResponse res) {
 
     res.redirect("/");
 } // cancel
+
+void report(HTTPServerRequest req, HTTPServerResponse res) {
+    if (!req.session) req.session = res.startSession();
+    auto sessid = req.session.id;
+    auto report = task_states.get_report_vars(sessid);
+    render!("report.dt", report)(res);
+} // report
 
 void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
     if (!req.session) req.session = res.startSession();

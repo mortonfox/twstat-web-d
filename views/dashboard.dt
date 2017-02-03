@@ -22,6 +22,12 @@ block content
       - break;
 
     - default:
+      - if (dashparams.last_generated != "")
+        p
+          a(href='/report', class='btn btn-default') View report
+          br
+          small (Last generated: #{dashparams.last_generated})
+
       form(method='post', action='/upload', enctype='multipart/form-data')
         fieldset
           - if (dashparams.errormsg != "")
