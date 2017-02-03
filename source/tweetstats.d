@@ -4,7 +4,7 @@ import std.array : array, join;
 import std.conv : text;
 import std.datetime : DateTime, SysTime, days, Date, UTC;
 import std.format : formattedRead, format;
-import std.range : repeat, take, enumerate;
+import std.range : take, enumerate, iota;
 import std.regex : matchAll, replaceAll, split, ctRegex;
 import std.string : tr, toLower;
 import std.typecons : Tuple;
@@ -281,6 +281,10 @@ class TweetStats {
 
         foreach (period; count_defs)
             report["title_" ~ period.keyword] = period.title;
+
+        report["extra_css"] = iota(0, 10)
+            .map!(i => format(".w%d { color: %s !important; }", 10 - i, colors[i % $]))
+            .join("\n");
 
         return report;
     } // report_vars
