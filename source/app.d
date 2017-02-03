@@ -151,12 +151,23 @@ bool process_zipfile(string sessid, Path infile) {
     // CSV file for tweets within the ZIP file.
     const tweets_file = "tweets.csv";
 
+    // Reset cancel flag, just in case.
+    task_states.set_cancel(sessid, false);
+
+    scope(exit) {
+        // Make sure cancel flag gets reset when the worker task is done, just in case.
+        task_states.set_cancel(sessid, false);
+
+        // Reset busy state when done.
+        task_states.set_status(sessid, "ready");
+
+        // Ensure cleanup.
+        removeFile(infile);
+    }
+
     auto tweetstats = new TweetStats;
 
     try {
-        // Reset cancel flag, just in case.
-        task_states.set_cancel(sessid, false);
-
         logInfo("zipfile processor starting...");
 
         auto zip = new ZipArchive(readFile(infile));
@@ -178,26 +189,12 @@ bool process_zipfile(string sessid, Path infile) {
             // Detect user cancel.
             if (task_states.get_cancel(sessid)) {
                 logInfo("Task canceled!");
-                task_states.set_cancel(sessid, false);
-                break;
+                return false;
             }
         }
 
         auto report_vars = tweetstats.report_vars;
         task_states.set_report_vars(sessid, report_vars);
-
-        /*
-        logDebug("Resulting Report Vars:");
-        foreach (pair; report_vars.byKeyValue)
-            logDebug("  %s: %s", pair.key, pair.value);
-            */
-
-        task_states.set_status(sessid, "ready");
-
-        removeFile(infile);
-
-        // Reset cancel flag, just in case.
-        task_states.set_cancel(sessid, false);
     }
     catch (Exception e) {
         task_states.set_status(sessid, "error", text("Error processing ZIP file: ", e.msg));
