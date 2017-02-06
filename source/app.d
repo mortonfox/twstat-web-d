@@ -14,6 +14,7 @@ shared static this()
     router.get("/report", &report);
     router.post("/upload", &upload);
     router.post("/cancel", &cancel);
+    router.get("/about", &about);
     router.get("*", serveStaticFiles("public/"));
 
     auto settings = new HTTPServerSettings;
@@ -24,7 +25,7 @@ shared static this()
     settings.errorPageHandler = toDelegate(&errorHandler);
     listenHTTP(settings, router);
 
-    setLogLevel(LogLevel.debug_);
+    // setLogLevel(LogLevel.debug_);
 
     logInfo("Please open http://127.0.0.1:8080/ in your browser.");
 }
@@ -265,6 +266,11 @@ void report(HTTPServerRequest req, HTTPServerResponse res) {
     auto sessid = req.session.id;
     auto report = task_states.get_report_vars(sessid);
     render!("report.dt", report)(res);
+} // report
+
+void about(HTTPServerRequest req, HTTPServerResponse res) {
+    DashParams dashparams;
+    render!("about.dt", dashparams)(res);
 } // report
 
 void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
