@@ -8,6 +8,39 @@ block content
     form(method='post', action='/cancel')
       input#cancel.btn.btn-default(name='cancel', type='submit', value='Cancel')
 
+  - void uploadform()
+    form(method='post', action='/upload', enctype='multipart/form-data')
+      fieldset
+        - if (dashparams.errormsg != "")
+          .form-group.bg-danger= dashparams.errormsg
+
+        .form-group
+          label(for='tweetdata') Upload tweets.zip file:
+          | &nbsp;
+
+          .fileinput.fileinput-new(data-provides='fileinput')
+            span.btn.btn-default.btn-file
+              span.fileinput-new Select file
+              span.fileinput-exists Change file
+              input#tweetdata(name='tweetdata', type='file', required)
+            | &nbsp;
+            span.fileinput-preview
+            | &nbsp;
+            a.close.fileinput-exists(href='#', data-dismiss='fileinput', style='float: none') x
+
+        .form-group
+          label(for='timezone') Select a time zone:
+          | &nbsp;
+          select#timezone(name='timezone')
+            - foreach (tzname; dashparams.tznames)
+              - if (tzname == dashparams.selected_tz)
+                option(value="#{tzname}", selected)= tzname
+              - else
+                option(value="#{tzname}")= tzname
+
+        .form-group
+          button.btn.btn-primary(type='submit') Upload
+
   - switch (dashparams.status)
     - case "busy":
       - if (dashparams.cancel)
@@ -28,44 +61,15 @@ block content
     - default:
       - if (dashparams.last_generated != "")
         p
-          a(href='/report', class='btn btn-default') View report
+          a.btn.btn-default(href='/report') View report
           br
           small (Last generated: #{dashparams.last_generated})
 
-      form(method='post', action='/upload', enctype='multipart/form-data')
-        fieldset
-          - if (dashparams.errormsg != "")
-            div(class='form-group bg-danger')= dashparams.errormsg
-
-          .form-group
-            label(for='tweetdata') Upload tweets.zip file:
-            | &nbsp;
-
-            div(class='fileinput fileinput-new', data-provides='fileinput')
-              span(class='btn btn-default btn-file')
-                span.fileinput-new Select file
-                span.fileinput-exists Change file
-                input#tweetdata(name='tweetdata', type='file', required)
-              | &nbsp;
-              span.fileinput-preview
-              | &nbsp;
-              a(href='#', class='close fileinput-exists', data-dismiss='fileinput', style='float: none') x
-
-          .form-group
-            label(for='timezone') Select a time zone:
-            | &nbsp;
-            select#timezone(name='timezone')
-              - foreach (tzname; dashparams.tznames)
-                - if (tzname == dashparams.selected_tz)
-                  option(value="#{tzname}", selected='selected')= tzname
-                - else
-                  option(value="#{tzname}")= tzname
-
-          .form-group
-            button(type='submit', class='btn btn-primary') Upload
+      - uploadform();
 
   hr
   footer
     p
       a(href='/about') Help/About
+
 //- vim:set et sw=2:
