@@ -4,13 +4,17 @@ block title
   | Dashboard
 
 block content
+  - void cancelbtn()
+    form(method='post', action='/cancel')
+      input#cancel.btn.btn-default(name='cancel', type='submit', value='Cancel')
+
   - switch (dashparams.status)
     - case "busy":
       - if (dashparams.cancel)
         p Canceling...
       - else
         p= dashparams.message
-        include cancelbtn.dt
+        - cancelbtn();
       - break;
 
     - case "waiting":
@@ -18,7 +22,7 @@ block content
         p Canceling...
       - else
         p Queued...
-        include cancelbtn.dt
+        - cancelbtn();
       - break;
 
     - default:

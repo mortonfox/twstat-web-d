@@ -1,2 +1,0 @@
-form(method='post', action='/cancel')
-  input#cancel(name='cancel', type='submit', value='Cancel', class='btn btn-default')
