@@ -168,8 +168,12 @@ bool process_zipfile(string sessid, Path infile, string tz) {
         // Make sure cancel flag gets reset when the worker task is done, just in case.
         task_states.set_cancel(sessid, false);
 
-        // Reset busy state when done.
-        task_states.set_status(sessid, "ready");
+        if (task_states.get_status(sessid) == "busy") {
+            // Reset busy state when done.
+            // Don't change the state if state is "error" because we want the
+            // error message to show in the dashboard.
+            task_states.set_status(sessid, "ready");
+        }
 
         // Ensure cleanup.
         removeFile(infile);
