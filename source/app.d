@@ -188,7 +188,7 @@ bool process_zipfile(string sessid, Path infile, string tz) {
         auto zipdir = zip.directory;
 
         if (tweets_file !in zipdir)
-            throw new Exception(text(tweets_file, " was not found in ZIP file ", infile));
+            throw new Exception(text(tweets_file, " was not found in ZIP file"));
 
         logInfo("Extracting %s...", tweets_file);
 
