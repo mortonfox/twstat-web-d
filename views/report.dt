@@ -9,7 +9,7 @@ html
 
     style(type='text/css').
       body {
-        background-color: #ffffff; 
+        background-color: #ffffff;
         color: #000000;
         font-family: Arial, Helvetica, sans-serif;
       }
@@ -63,19 +63,19 @@ html
           new google.visualization.ColumnChart(document.getElementById('by_month')).draw(data,
               {
                   title : "Tweets by Month",
-                  width : 1200, 
+                  width : 1200,
                   height : 400,
                   legend : {
                       position: 'none'
                   },
                   tooltip : {
-                      isHtml : true 
+                      isHtml : true
                   },
                   hAxis: {
-                      gridlines: { 
+                      gridlines: {
                           color: 'transparent'
                       },
-                      title: "Month", 
+                      title: "Month",
                       viewWindowMode: 'explicit', viewWindow: {
                           max: month_max, min: month_min
                       }
@@ -99,14 +99,14 @@ html
           new google.visualization.ColumnChart(document.getElementById(elemid)).draw(data,
               {
                   title : chart_title,
-                  width : 600, 
+                  width : 600,
                   height : 400,
                   legend: {position: 'none'},
                   tooltip : {
-                      isHtml : true 
+                      isHtml : true
                   },
                   hAxis: {
-                      title: "Day of Week", 
+                      title: "Day of Week",
                       gridlines:{ color: 'transparent'}
                   }
               }
@@ -128,7 +128,7 @@ html
           new google.visualization.ColumnChart(document.getElementById(elemid)).draw(data,
               {
                   title : chart_title,
-                  width : 600, 
+                  width : 600,
                   height : 400,
                   legend: {position: 'none'},
                   tooltip: { isHtml: true },
@@ -159,7 +159,7 @@ html
           new google.visualization.BarChart(document.getElementById(elemid)).draw(data,
               {
                   title : chart_title,
-                  width : 600, 
+                  width : 600,
                   height : 400,
                   legend: {position: 'none'},
                   hAxis: {
@@ -180,8 +180,8 @@ html
           "use strict";
 
           draw_by_month(
-                  [ !{report["by_month_data"]} ], 
-                  new Date(#{report["by_month_min"]}), 
+                  [ !{report["by_month_data"]} ],
+                  new Date(#{report["by_month_min"]}),
                   new Date(#{report["by_month_max"]})
           );
 
@@ -245,7 +245,7 @@ html
               "by_words_last30"
           );
       });
-      
+
   body
     h1 Twitter Archive Stats
     h2= report["subtitle"]
