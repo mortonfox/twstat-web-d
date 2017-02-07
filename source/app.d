@@ -17,9 +17,12 @@ shared static this()
     router.get("/about", &about);
     router.get("*", serveStaticFiles("public/"));
 
+    ushort port = 8080;
+    readOption("port|p", &port, "Port number for web server");
+
     auto settings = new HTTPServerSettings;
     settings.sessionStore = new MemorySessionStore;
-    settings.port = 8080;
+    settings.port = port;
     settings.bindAddresses = ["::1", "127.0.0.1"];
     settings.maxRequestSize = 50_000_000;
     settings.errorPageHandler = toDelegate(&errorHandler);
@@ -27,7 +30,7 @@ shared static this()
 
     // setLogLevel(LogLevel.debug_);
 
-    logInfo("Please open http://127.0.0.1:8080/ in your browser.");
+    logInfo(text("Please open http://127.0.0.1:", port, "/ in your browser."));
 }
 
 struct DashParams {
