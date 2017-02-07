@@ -10,7 +10,6 @@ shared static this()
 {
     auto router = new URLRouter;
     router.get("/", &dashboard);
-    router.get("/upload", &dashboard);
     router.get("/report", &report);
     router.post("/upload", &upload);
     router.post("/cancel", &cancel);
