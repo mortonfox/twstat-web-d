@@ -46,7 +46,7 @@ class TweetStats {
 
     // Archive entries before this point all have 00:00:00 as the time, so don't
     // include them in the by-hour chart.
-    private static DateTime zero_time_cutoff;
+    private immutable static DateTime zero_time_cutoff;
 
     private DateTime oldest_tstamp;
     private DateTime newest_tstamp;
@@ -54,11 +54,11 @@ class TweetStats {
 
     private immutable PosixTimeZone tz;
 
-    private static mention_regex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
-    private static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
-    private static word_split_regex = ctRegex!(`[^a-z0-9_']+`);
+    private immutable static mention_regex = ctRegex!(`\B@([A-Za-z0-9_]+)`);
+    private immutable static strip_a_tag_regex = ctRegex!(`<a[^>]*>(.*)</a>`);
+    private immutable static word_split_regex = ctRegex!(`[^a-z0-9_']+`);
 
-    private static int[string] common_words;
+    private immutable static int[string] common_words;
 
     static this() {
         common_words = [
@@ -85,7 +85,7 @@ class TweetStats {
         zero_time_cutoff = cast(DateTime) *zero_time_cutoff_systime;
     }
 
-    private static downames = [
+    private immutable static downames = [
         "Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"
     ];
 
@@ -175,7 +175,7 @@ class TweetStats {
     }
 
     auto report_vars() {
-        static colors = [
+        immutable static colors = [
             "#673AB7", "#3F51B5", "#2196F3", "#009688",
             "#4CAF50", "#FF5722", "#E91E63"
         ];
