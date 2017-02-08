@@ -1,3 +1,6 @@
+// TweetStats
+// Process TweetRecords and keep track of stats for reporting.
+
 import std.algorithm.iteration : map, filter;
 import std.algorithm.sorting : sort;
 import std.array : array, join;
@@ -295,3 +298,27 @@ class TweetStats {
         return report;
     } // report_vars
 } // class TweetStats
+
+unittest {
+    // import std.stdio : writeln;
+
+    auto tweet1 = TweetRecord(
+            "2017-01-09 13:21:51 +0000",
+            "<a href=\"http://tapbots.com/software/tweetbot/mac\" rel=\"nofollow\">Tweetbot for Mac</a>",
+            "Hello world @mention the time"
+            );
+    auto twstats = new TweetStats("US/Eastern");
+    twstats.process_record(tweet1, (string) {});
+
+    // writeln(twstats.count_by_month);
+    
+    assert(twstats.count_by_month == ["2017-01":1]);
+
+    foreach (period; twstats.count_defs) {
+        assert(period.count_by_dow == [0, 1, 0, 0, 0, 0, 0]);
+        assert(period.count_by_hour == [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert(period.count_by_mentions == ["mention":1]);
+        assert(period.count_by_source == ["Tweetbot for Mac":1]);
+        assert(period.count_by_words == ["hello":1, "mention":1, "world":1]);
+    }
+}
