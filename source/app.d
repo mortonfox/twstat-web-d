@@ -91,7 +91,6 @@ private bool process_zipfile(string sessid, Path infile, string tz) {
 
     void busy_message(string message) {
         task_states.set_status(sessid, "busy", message);
-
         logDebug("Busy message: %s", message);
     }
 
@@ -192,9 +191,7 @@ private void upload(HTTPServerRequest req, HTTPServerResponse res) {
 
 private void cancel(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
-
     auto sessid = req.session.id;
-
     auto status = task_states.get_status(sessid);
 
     // Can only cancel if task is running.
