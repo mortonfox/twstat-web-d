@@ -5,6 +5,7 @@ import std.datetime : PosixTimeZone;
 import std.file : read, tempDir;
 import std.zip : ZipArchive;
 import tweetstats : TweetStats, TweetRecord;
+import taskstates : task_states;
 
 shared static this()
 {
@@ -32,7 +33,7 @@ shared static this()
     logInfo(text("Please open http://127.0.0.1:", port, "/ in your browser."));
 }
 
-struct DashParams {
+private struct DashParams {
     string status;
     bool cancel;
     string message;
@@ -45,9 +46,9 @@ struct DashParams {
     string selected_tz;
 }
 
-const default_timezone = "US/Eastern";
+private const default_timezone = "US/Eastern";
 
-void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
+private void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     dashparams.tznames = PosixTimeZone.getInstalledTZNames();
     dashparams.selected_tz = sess.get("tz", default_timezone);
 
@@ -79,78 +80,14 @@ void render_dash(Session sess, DashParams dashparams, HTTPServerResponse res) {
     render!("dashboard.dt", dashparams)(res);
 } // render_dash
 
-void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
+private void dashboard(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
 
     DashParams dashparams;
     render_dash(req.session, dashparams, res);
 }
 
-shared struct TaskState {
-    string status;
-    string message;
-    bool cancel;
-    string[string] report_vars;
-
-    this(string status, string message = "") {
-        this.status = status;
-        this.message = message;
-        this.cancel = false;
-    }
-}
-
-synchronized class TaskStates {
-    // Task states indexed by session ID.
-    private TaskState[string] states;
-
-    // Retrieve TaskState corresponding to session ID. Initialize a TaskState
-    // and return it if it doesn't exist.
-    private auto get_state(string sessid) {
-        if (sessid !in states)
-            states[sessid] = shared(TaskState)("ready");
-        return &states[sessid];
-    }
-
-    string get_status(string sessid) {
-        return get_state(sessid).status;
-    }
-
-    string get_message(string sessid) {
-        return get_state(sessid).message;
-    }
-
-    void set_status(string sessid, string status, string message = "") {
-        auto task_state = get_state(sessid);
-        task_state.status = status;
-        task_state.message = message;
-    }
-
-    bool get_cancel(string sessid) {
-        return get_state(sessid).cancel;
-    }
-
-    void set_cancel(string sessid, bool cancel) {
-        get_state(sessid).cancel = cancel;
-    }
-
-    auto get_report_vars(string sessid) {
-        return get_state(sessid).report_vars;
-    }
-
-    void set_report_vars(string sessid, string[string] report) {
-        auto task_state = get_state(sessid);
-        task_state.report_vars.clear;
-
-        // Copy it string by string because the incoming report is not a
-        // shared variable.
-        foreach (pair; report.byKeyValue)
-            task_state.report_vars[pair.key] = pair.value;
-    }
-} // TaskStates
-
-shared task_states = new TaskStates();
-
-bool process_zipfile(string sessid, Path infile, string tz) {
+private bool process_zipfile(string sessid, Path infile, string tz) {
 
     void busy_message(string message) {
         task_states.set_status(sessid, "busy", message);
@@ -217,7 +154,7 @@ bool process_zipfile(string sessid, Path infile, string tz) {
     return true;
 } // process_zipfile
 
-void upload(HTTPServerRequest req, HTTPServerResponse res) {
+private void upload(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
 
     auto new_tz = req.form.get("timezone");
@@ -253,7 +190,7 @@ void upload(HTTPServerRequest req, HTTPServerResponse res) {
     res.redirect("/");
 } // upload
 
-void cancel(HTTPServerRequest req, HTTPServerResponse res) {
+private void cancel(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
 
     auto sessid = req.session.id;
@@ -267,23 +204,23 @@ void cancel(HTTPServerRequest req, HTTPServerResponse res) {
     res.redirect("/");
 } // cancel
 
-void report(HTTPServerRequest req, HTTPServerResponse res) {
+private void report(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
     auto sessid = req.session.id;
     auto report = task_states.get_report_vars(sessid);
     render!("report.dt", report)(res);
 } // report
 
-void about(HTTPServerRequest req, HTTPServerResponse res) {
+private void about(HTTPServerRequest req, HTTPServerResponse res) {
     DashParams dashparams;
     render!("about.dt", dashparams)(res);
 } // report
 
-void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
+private void errorHandler(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error) {
     if (!req.session) req.session = res.startSession();
 
     DashParams dashparams;
     dashparams.errormsg = text("Error ", error.code, ": ", error.message);
 
     render_dash(req.session, dashparams, res);
-}
+} // errorHandler
