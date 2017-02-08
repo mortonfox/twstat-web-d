@@ -208,7 +208,10 @@ private void report(HTTPServerRequest req, HTTPServerResponse res) {
     if (!req.session) req.session = res.startSession();
     auto sessid = req.session.id;
     auto report = task_states.get_report_vars(sessid);
-    render!("report.dt", report)(res);
+    if (report)
+        render!("report.dt", report)(res);
+    else
+        res.redirect("/");
 } // report
 
 private void about(HTTPServerRequest req, HTTPServerResponse res) {
