@@ -35,7 +35,7 @@ Clone or download this git repository.
 In the root folder, run the following:
 
 ```
-dub build
+dub build -b release-nobounds
 ./twstat-web-d
 ```
 
