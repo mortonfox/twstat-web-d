@@ -61,7 +61,7 @@ block content
     - default:
       - if (dashparams.last_generated != "")
         p
-          a.btn.btn-default(href='/report') View report
+          a.btn.btn-default(href='/report', target='_blank') View report
           br
           small (Last generated: #{dashparams.last_generated})
 
